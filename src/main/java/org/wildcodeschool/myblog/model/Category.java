@@ -14,6 +14,9 @@ public class Category {
     @Column(nullable = false, length = 50, unique = true)
     private String name;
 
+    @OneToMany(mappedBy = "category")
+    private List<Article> articles;
+
 
     // Getters et setters
     public Long getId() {
@@ -29,5 +32,8 @@ public class Category {
     public void setName(String name) {
         this.name = name;
     }
+
+    public List<Article> getArticles() { return articles; }
+    public void setArticles(List<Article> articles) { this.articles = articles; }
 
 }

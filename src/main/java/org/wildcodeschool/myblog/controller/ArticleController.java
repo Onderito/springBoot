@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.wildcodeschool.myblog.dto.ArticleDTO;
 import org.wildcodeschool.myblog.model.Article;
 import org.wildcodeschool.myblog.model.Category;
 import org.wildcodeschool.myblog.repository.ArticleRepository;
@@ -12,6 +13,7 @@ import org.wildcodeschool.myblog.repository.CategoryRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/articles")
@@ -29,63 +31,70 @@ public class ArticleController {
 
     //Méthodes CRUD
     @GetMapping
-    public ResponseEntity<List<Article>> getAllArticles() {
+    public ResponseEntity<List<ArticleDTO>> getAllArticles() {
         List<Article> articles = articleRepository.findAll();
+        List<ArticleDTO> articlesDTO = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (articles.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(articles);
+        return ResponseEntity.ok(articlesDTO);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Article> getArticleById(@PathVariable Long id) {
+    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Long id) {
         Optional<Article> optionalArticle = articleRepository.findById(id);
         if (optionalArticle.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         Article article = optionalArticle.get();
 
-        return ResponseEntity.ok(article);
+        ArticleDTO articleDTO = convertToDTO(article);
+
+        return ResponseEntity.ok(articleDTO);
     }
 
     @GetMapping("/search-title")
-    public ResponseEntity<List<Article>> getArticlesByTitle(@RequestParam String searchTerms) {
+    public ResponseEntity<List<ArticleDTO>> getArticlesByTitle(@RequestParam String searchTerms) {
         List<Article> articles = articleRepository.findByTitle(searchTerms);
+        List<ArticleDTO> articlesDTO = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (articles.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(articles);
+        return ResponseEntity.ok(articlesDTO);
     }
 
     @GetMapping("/search-content")
-    public ResponseEntity<List<Article>> getArticlesByContent(@RequestParam String searchTerms) {
+    public ResponseEntity<List<ArticleDTO>> getArticlesByContent(@RequestParam String searchTerms) {
         List<Article> articles = articleRepository.findByContentContaining(searchTerms);
+        List<ArticleDTO> articlesDTO = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (articles.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(articles);
+        return ResponseEntity.ok(articlesDTO);
     }
 
     @GetMapping("/search-after")
-    public ResponseEntity<List<Article>> getArticlesCreatedAfter(@RequestParam LocalDateTime date) {
+    public ResponseEntity<List<ArticleDTO>> getArticlesCreatedAfter(@RequestParam LocalDateTime date) {
         List<Article> articles = articleRepository.findByCreatedAtAfter(date);
+        List<ArticleDTO> articlesDTO = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (articles.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(articles);
+        return ResponseEntity.ok(articlesDTO);
     }
 
     @GetMapping("/search-last")
-    public ResponseEntity<List<Article>> getArticlesLast() {
+    public ResponseEntity<List<ArticleDTO>> getArticlesLast() {
         List<Article> articles = articleRepository.findTop2ByOrderByCreatedAtDesc();
+        List<ArticleDTO> articlesDTO = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (articles.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(articles);
+        return ResponseEntity.ok(articlesDTO);
     }
 
     @PostMapping
-    public ResponseEntity<Article> createArticle(@RequestBody Article article) {
+    public ResponseEntity<ArticleDTO> createArticle(@RequestBody Article article) {
         article.setCreatedAt(LocalDateTime.now());
         article.setUpdatedAt(LocalDateTime.now());
         if (article.getCategory() != null) {
@@ -96,11 +105,15 @@ public class ArticleController {
             article.setCategory(category);
         }
         Article savedArticle = articleRepository.save(article);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedArticle);
+
+        ArticleDTO articleDTO = convertToDTO(savedArticle);
+
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(articleDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Article> updateArticle(@PathVariable Long id, @RequestBody Article articleDetails) {
+    public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Long id, @RequestBody Article articleDetails) {
         Article article = articleRepository.findById(id).orElse(null);
         if (article == null) {
             return ResponseEntity.notFound().build();
@@ -114,7 +127,10 @@ public class ArticleController {
         article.setCategory(category);
 
         Article updatedArticle = articleRepository.save(article);
-        return ResponseEntity.ok(updatedArticle);
+
+        ArticleDTO articleDTO = convertToDTO(updatedArticle);
+
+        return ResponseEntity.ok(articleDTO);
     }
 
     @DeleteMapping("/{id}")
@@ -125,6 +141,19 @@ public class ArticleController {
         }
         articleRepository.delete(article);
         return ResponseEntity.noContent().build();
+    }
+
+    private ArticleDTO convertToDTO(Article article) {
+        ArticleDTO articleDTO = new ArticleDTO();
+        articleDTO.setId(article.getId());
+        articleDTO.setTitle(article.getTitle());
+        articleDTO.setContent(article.getContent());
+        articleDTO.setCreatedAt(article.getCreatedAt());
+        articleDTO.setUpdatedAt(article.getUpdatedAt());
+        if (article.getCategory() != null) {
+            articleDTO.setCategoryName(article.getCategory().getName());
+        }
+        return articleDTO;
     }
 
 }
