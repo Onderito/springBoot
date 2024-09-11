@@ -55,7 +55,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+	
+   <dependency>
+     <groupId>com.blr19c.falowp</groupId>
+     <artifactId>falowp-bot-plugin-bili</artifactId>
+     <version>1.4.3</version>
+   </dependency>
+ </dependencies>
 
 	<build>
 		<plugins>

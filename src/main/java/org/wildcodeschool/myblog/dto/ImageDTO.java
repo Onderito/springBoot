@@ -7,6 +7,7 @@ public class ImageDTO {
     private String url;
     private List<Long> articleIds;
 
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

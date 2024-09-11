@@ -17,6 +17,8 @@ public class Image {
     @ManyToMany(mappedBy = "images")
     private List<Article> articles;
 
+
+    //Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
