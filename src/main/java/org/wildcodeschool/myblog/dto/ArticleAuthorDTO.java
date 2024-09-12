@@ -1,28 +1,15 @@
-package org.wildcodeschool.myblog.model;
+package org.wildcodeschool.myblog.dto;
 
-import jakarta.persistence.*;
+import org.wildcodeschool.myblog.model.Article;
+import org.wildcodeschool.myblog.model.Author;
 
+public class ArticleAuthorDTO {
 
-@Entity
-public class ArticleAuthor {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "article_id")
     private Article article;
-
-    @ManyToOne
-    @JoinColumn(name = "author_id")
     private Author author;
-
-    @Column(nullable = false, length = 50)
     private String contribution;
 
-
-    //Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -34,4 +21,5 @@ public class ArticleAuthor {
 
     public String getContribution() { return contribution; }
     public void setContribution(String contribution) { this.contribution = contribution; }
+
 }

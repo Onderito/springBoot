@@ -5,12 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.wildcodeschool.myblog.dto.ArticleDTO;
-import org.wildcodeschool.myblog.model.Article;
-import org.wildcodeschool.myblog.model.Category;
-import org.wildcodeschool.myblog.model.Image;
-import org.wildcodeschool.myblog.repository.ArticleRepository;
-import org.wildcodeschool.myblog.repository.CategoryRepository;
-import org.wildcodeschool.myblog.repository.ImageRepository;
+import org.wildcodeschool.myblog.dto.AuthorDTO;
+import org.wildcodeschool.myblog.model.*;
+import org.wildcodeschool.myblog.repository.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,15 +21,23 @@ public class ArticleController {
     private final ArticleRepository articleRepository;
     private final CategoryRepository categoryRepository;
     private final ImageRepository imageRepository;
+    private final ArticleAuthorRepository articleAuthorRepository;
+    private final AuthorRepository authorRepository;
+
 
     public ArticleController(
             ArticleRepository articleRepository,
             CategoryRepository categoryRepository,
-            ImageRepository imageRepository) {
-        this.articleRepository = articleRepository;
-        this.categoryRepository = categoryRepository;
-        this.imageRepository = imageRepository;
-    }
+            ImageRepository imageRepository,
+            ArticleAuthorRepository articleAuthorRepository,
+            AuthorRepository authorRepository)
+            {
+                this.articleRepository = articleRepository;
+                this.categoryRepository = categoryRepository;
+                this.imageRepository = imageRepository;
+                this.articleAuthorRepository = articleAuthorRepository;
+                this.authorRepository = authorRepository;
+            }
 
     //Méthodes CRUD
     @GetMapping
@@ -131,13 +136,26 @@ public class ArticleController {
             }
             article.setImages(validImages);
         }
-
         Article savedArticle = articleRepository.save(article);
-        ArticleDTO articleDTO = convertToDTO(savedArticle);
+        if (article.getArticleAuthors() != null) {
+            for (ArticleAuthor articleAuthor : article.getArticleAuthors()) {
+                Author author = articleAuthor.getAuthor();
+                author = authorRepository.findById(author.getId()).orElse(null);
+                if (author == null) {
+                    return ResponseEntity.badRequest().body(null);
+                }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(articleDTO);
+                articleAuthor.setAuthor(author);
+                articleAuthor.setArticle(savedArticle);
+                articleAuthor.setContribution(articleAuthor.getContribution());
+
+                articleAuthorRepository.save(articleAuthor);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedArticle));
     }
 
+    
     @PutMapping("/{id}")
     public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Long id, @RequestBody Article articleDetails) {
         Article article = articleRepository.findById(id).orElse(null);
@@ -175,6 +193,36 @@ public class ArticleController {
         } else {
             article.getImages().clear();
         }
+        if (articleDetails.getArticleAuthors() != null) {
+            // Supprimer manuellement les anciens ArticleAuthor
+            for (ArticleAuthor oldArticleAuthor : article.getArticleAuthors()) {
+                articleAuthorRepository.delete(oldArticleAuthor);
+            }
+
+            List<ArticleAuthor> updatedArticleAuthors = new ArrayList<>();
+
+            for (ArticleAuthor articleAuthorDetails : articleDetails.getArticleAuthors()) {
+                Author author = articleAuthorDetails.getAuthor();
+                author = authorRepository.findById(author.getId()).orElse(null);
+                if (author == null) {
+                    return ResponseEntity.badRequest().build();
+                }
+
+                // Créer et associer la nouvelle relation ArticleAuthor
+                ArticleAuthor newArticleAuthor = new ArticleAuthor();
+                newArticleAuthor.setAuthor(author);
+                newArticleAuthor.setArticle(article);
+                newArticleAuthor.setContribution(articleAuthorDetails.getContribution());
+
+                updatedArticleAuthors.add(newArticleAuthor);
+            }
+
+            for (ArticleAuthor articleAuthor : updatedArticleAuthors) {
+                articleAuthorRepository.save(articleAuthor);
+            }
+
+            article.setArticleAuthors(updatedArticleAuthors);
+        }
 
         Article updatedArticle = articleRepository.save(article);
         ArticleDTO articleDTO = convertToDTO(updatedArticle);
@@ -188,6 +236,11 @@ public class ArticleController {
         Article article = articleRepository.findById(id).orElse(null);
         if (article == null) {
             return ResponseEntity.notFound().build();
+        }
+        if (article.getArticleAuthors() != null) {
+            for (ArticleAuthor articleAuthor : article.getArticleAuthors()) {
+                articleAuthorRepository.delete(articleAuthor);
+            }
         }
         articleRepository.delete(article);
         return ResponseEntity.noContent().build();
@@ -206,6 +259,18 @@ public class ArticleController {
         }
         if (article.getImages() != null) {
             articleDTO.setImageUrls(article.getImages().stream().map(Image::getUrl).collect(Collectors.toList()));
+        }
+        if (article.getArticleAuthors() != null) {
+            articleDTO.setAuthors(article.getArticleAuthors().stream()
+                    .filter(articleAuthor -> articleAuthor.getAuthor() != null)
+                    .map(articleAuthor -> {
+                        AuthorDTO authorDTO = new AuthorDTO();
+                        authorDTO.setId(articleAuthor.getAuthor().getId());
+                        authorDTO.setFirstname(articleAuthor.getAuthor().getFirstname());
+                        authorDTO.setLastname(articleAuthor.getAuthor().getLastname());
+                        return authorDTO;
+                    })
+                    .collect(Collectors.toList()));
         }
         return articleDTO;
     }
