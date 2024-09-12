@@ -173,7 +173,6 @@ public class ArticleController {
             }
             article.setCategory(category);
         }
-
         if (articleDetails.getImages() != null) {
             List<Image> validImages = new ArrayList<>();
             for (Image image : articleDetails.getImages()) {
@@ -194,7 +193,6 @@ public class ArticleController {
             article.getImages().clear();
         }
         if (articleDetails.getArticleAuthors() != null) {
-            // Supprimer manuellement les anciens ArticleAuthor
             for (ArticleAuthor oldArticleAuthor : article.getArticleAuthors()) {
                 articleAuthorRepository.delete(oldArticleAuthor);
             }
@@ -207,8 +205,6 @@ public class ArticleController {
                 if (author == null) {
                     return ResponseEntity.badRequest().build();
                 }
-
-                // Créer et associer la nouvelle relation ArticleAuthor
                 ArticleAuthor newArticleAuthor = new ArticleAuthor();
                 newArticleAuthor.setAuthor(author);
                 newArticleAuthor.setArticle(article);
@@ -216,14 +212,11 @@ public class ArticleController {
 
                 updatedArticleAuthors.add(newArticleAuthor);
             }
-
             for (ArticleAuthor articleAuthor : updatedArticleAuthors) {
                 articleAuthorRepository.save(articleAuthor);
             }
-
             article.setArticleAuthors(updatedArticleAuthors);
         }
-
         Article updatedArticle = articleRepository.save(article);
         ArticleDTO articleDTO = convertToDTO(updatedArticle);
 
