@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.wildcodeschool.myblog.dto.AuthorDTO;
 import org.wildcodeschool.myblog.model.Author;
-import org.wildcodeschool.myblog.repository.AuthorRepository;
 import org.wildcodeschool.myblog.service.AuthorService;
 
 import java.util.List;
