@@ -1,7 +1,9 @@
 package org.wildcodeschool.myblog.mapper;
 
 import org.springframework.stereotype.Component;
+import org.wildcodeschool.myblog.dto.ArticleCreateDTO;
 import org.wildcodeschool.myblog.dto.ArticleDTO;
+import org.wildcodeschool.myblog.dto.ArticleUpdateDTO;
 import org.wildcodeschool.myblog.dto.AuthorDTO;
 import org.wildcodeschool.myblog.model.Article;
 import org.wildcodeschool.myblog.model.Image;
@@ -37,5 +39,20 @@ public class ArticleMapper {
             .collect(Collectors.toList()));
         }
         return articleDTO;
+    }
+
+    public Article convertToEntity(ArticleCreateDTO articleCreateDTO) {
+        Article article = new Article();
+        article.setTitle(articleCreateDTO.getTitle());
+        article.setContent(articleCreateDTO.getContent());
+
+        return article;
+    }
+
+    public Article convertToEntity(ArticleUpdateDTO articleUpdateDTO) {
+        Article article = new Article();
+        article.setTitle(articleUpdateDTO.getTitle());
+        article.setContent(articleUpdateDTO.getContent());
+        return article;
     }
 }

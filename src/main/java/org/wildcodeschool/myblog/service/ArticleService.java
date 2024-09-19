@@ -1,9 +1,10 @@
 package org.wildcodeschool.myblog.service;
 
 import org.springframework.stereotype.Service;
-import org.wildcodeschool.myblog.dto.ArticleDTO;
+import org.wildcodeschool.myblog.dto.*;
 import org.wildcodeschool.myblog.exception.ResourceNotFoundException;
 import org.wildcodeschool.myblog.mapper.ArticleMapper;
+import org.wildcodeschool.myblog.mapper.ImageMapper;
 import org.wildcodeschool.myblog.model.*;
 import org.wildcodeschool.myblog.repository.*;
 
@@ -17,6 +18,7 @@ public class ArticleService {
 
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
+    private final ImageMapper imageMapper;
     private final CategoryRepository categoryRepository;
     private final ImageRepository imageRepository;
     private final AuthorRepository authorRepository;
@@ -25,12 +27,14 @@ public class ArticleService {
     public ArticleService(
             ArticleRepository articleRepository,
             ArticleMapper articleMapper,
+            ImageMapper imageMapper,
             CategoryRepository categoryRepository,
             ImageRepository imageRepository,
             AuthorRepository authorRepository,
             ArticleAuthorRepository articleAuthorRepository) {
         this.articleRepository = articleRepository;
         this.articleMapper = articleMapper;
+        this.imageMapper = imageMapper;
         this.categoryRepository = categoryRepository;
         this.imageRepository = imageRepository;
         this.authorRepository = authorRepository;
@@ -51,11 +55,13 @@ public class ArticleService {
         return articleMapper.convertToDTO(article);
     }
 
-    public ArticleDTO createArticle(Article article) {
+    public ArticleDTO createArticle(ArticleCreateDTO articleCreateDTO) {
+        Article article = articleMapper.convertToEntity(articleCreateDTO);
+
         article.setCreatedAt(LocalDateTime.now());
         article.setUpdatedAt(LocalDateTime.now());
 
-        // Gestion de la catégorie
+        // Catégorie
         if (article.getCategory() != null) {
             Category category = categoryRepository.findById(article.getCategory().getId()).orElse(null);
             if (category == null) {
@@ -63,8 +69,7 @@ public class ArticleService {
             }
             article.setCategory(category);
         }
-
-        // Gestion des images
+        // Images
         if (article.getImages() != null && !article.getImages().isEmpty()) {
             List<Image> validImages = new ArrayList<>();
             for (Image image : article.getImages()) {
@@ -82,10 +87,8 @@ public class ArticleService {
             }
             article.setImages(validImages);
         }
-
         Article savedArticle = articleRepository.save(article);
-
-        // Gestion des auteurs
+        // Auteurs
         if (article.getArticleAuthors() != null) {
             for (ArticleAuthor articleAuthor : article.getArticleAuthors()) {
                 Author author = articleAuthor.getAuthor();
@@ -101,82 +104,67 @@ public class ArticleService {
                 articleAuthorRepository.save(articleAuthor);
             }
         }
-
         return articleMapper.convertToDTO(savedArticle);
     }
 
-    public ArticleDTO updateArticle(Long id, Article articleDetails) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
-            return null;
+
+    public ArticleDTO updateArticle(Long id, ArticleUpdateDTO articleUpdateDTO) {
+        Article article = articleRepository.findById(id).orElseThrow(()
+                -> new ResourceNotFoundException("L'article avec l'ID " + id + " n'a pas été trouvé."));
+
+        if (articleUpdateDTO.getTitle() != null) {
+            article.setTitle(articleUpdateDTO.getTitle());
+
         }
-        article.setTitle(articleDetails.getTitle());
-        article.setContent(articleDetails.getContent());
+        if (articleUpdateDTO.getContent() != null) {
+            article.setContent(articleUpdateDTO.getContent());
+
+        }
         article.setUpdatedAt(LocalDateTime.now());
 
-        // Mise à jour de la catégorie
-        if (articleDetails.getCategory() != null) {
-            Category category = categoryRepository.findById(articleDetails.getCategory().getId()).orElse(null);
-            if (category == null) {
-                return null;
-            }
+        // Catégorie
+        if (articleUpdateDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(articleUpdateDTO.getCategoryId()).orElseThrow(()
+                -> new ResourceNotFoundException("La catégorie avec l'ID " + articleUpdateDTO.getCategoryId() + " n'existe pas."));
             article.setCategory(category);
         }
-
-        // Mise à jour des images
-        if (articleDetails.getImages() != null) {
+        // Images
+        if (articleUpdateDTO.getImages() != null) {
             List<Image> validImages = new ArrayList<>();
-            for (Image image : articleDetails.getImages()) {
-                if (image.getId() != null) {
-                    Image existingImage = imageRepository.findById(image.getId()).orElse(null);
-                    if (existingImage != null) {
-                        validImages.add(existingImage);
-                    } else {
-                        return null;
-                    }
+            for (ImageDTO imageDTO : articleUpdateDTO.getImages()) {
+                if (imageDTO.getId() != null) {
+                    Image existingImage = imageRepository.findById(imageDTO.getId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Image non trouvée avec l'ID " + imageDTO.getId()));
+                    validImages.add(existingImage);
                 } else {
-                    Image savedImage = imageRepository.save(image);
+                    Image savedImage = imageRepository.save(imageMapper.convertToEntity(imageDTO));
                     validImages.add(savedImage);
                 }
             }
             article.setImages(validImages);
-        } else {
-            article.getImages().clear();
         }
-
-        // Mise à jour des auteurs
-        if (articleDetails.getArticleAuthors() != null) {
-            for (ArticleAuthor oldArticleAuthor : article.getArticleAuthors()) {
-                articleAuthorRepository.delete(oldArticleAuthor);
-            }
-
+        // Auteurs
+        if (articleUpdateDTO.getAuthors() != null) {
+            articleAuthorRepository.deleteAll(article.getArticleAuthors());
             List<ArticleAuthor> updatedArticleAuthors = new ArrayList<>();
-
-            for (ArticleAuthor articleAuthorDetails : articleDetails.getArticleAuthors()) {
-                Author author = articleAuthorDetails.getAuthor();
-                author = authorRepository.findById(author.getId()).orElse(null);
-                if (author == null) {
-                    return null;
-                }
+            for (AuthorContributionDTO authorDTO : articleUpdateDTO.getAuthors()) {
+                Author author = authorRepository.findById(authorDTO.getAuthorId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Auteur non trouvé avec l'ID " + authorDTO.getAuthorId()));
 
                 ArticleAuthor newArticleAuthor = new ArticleAuthor();
                 newArticleAuthor.setAuthor(author);
                 newArticleAuthor.setArticle(article);
-                newArticleAuthor.setContribution(articleAuthorDetails.getContribution());
+                newArticleAuthor.setContribution(authorDTO.getContribution());
 
                 updatedArticleAuthors.add(newArticleAuthor);
             }
-
-            for (ArticleAuthor articleAuthor : updatedArticleAuthors) {
-                articleAuthorRepository.save(articleAuthor);
-            }
-
+            articleAuthorRepository.saveAll(updatedArticleAuthors);
             article.setArticleAuthors(updatedArticleAuthors);
         }
-
         Article updatedArticle = articleRepository.save(article);
         return articleMapper.convertToDTO(updatedArticle);
     }
+
 
     public boolean deleteArticle(Long id) {
         Article article = articleRepository.findById(id).orElse(null);
