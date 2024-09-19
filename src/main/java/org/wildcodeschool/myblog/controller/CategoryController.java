@@ -1,9 +1,12 @@
 package org.wildcodeschool.myblog.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.wildcodeschool.myblog.dto.CategoryCreateDTO;
 import org.wildcodeschool.myblog.dto.CategoryDTO;
+import org.wildcodeschool.myblog.dto.CategoryUpdateDTO;
 import org.wildcodeschool.myblog.model.Category;
 import org.wildcodeschool.myblog.service.CategoryService;
 
@@ -40,20 +43,19 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody Category category) {
-        CategoryDTO categorySaved = categoryService.createCategory(category);
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryCreateDTO categoryCreateDTO) {
+        CategoryDTO categorySaved = categoryService.createCategory(categoryCreateDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(categorySaved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
-        CategoryDTO category = categoryService.updateCategory(id, categoryDetails);
-        if (category == null) {
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryUpdateDTO categoryUpdateDTO) {
+        CategoryDTO categoryUpdated = categoryService.updateCategory(id, categoryUpdateDTO);
+        if (categoryUpdated == null) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(category);
+        return ResponseEntity.ok(categoryUpdated);
     }
 
     @DeleteMapping("/{id}")

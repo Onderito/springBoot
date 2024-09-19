@@ -10,6 +10,8 @@ public class ArticleAuthorDTO {
     private Author author;
     private String contribution;
 
+
+    //Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

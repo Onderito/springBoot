@@ -1,6 +1,8 @@
 package org.wildcodeschool.myblog.service;
 
 import org.springframework.stereotype.Service;
+import org.wildcodeschool.myblog.dto.CategoryCreateDTO;
+import org.wildcodeschool.myblog.dto.CategoryUpdateDTO;
 import org.wildcodeschool.myblog.model.*;
 import org.wildcodeschool.myblog.repository.*;
 import org.wildcodeschool.myblog.dto.CategoryDTO;
@@ -34,17 +36,17 @@ public class CategoryService {
         return categoryMapper.convertToDTO(category);
     }
 
-    public CategoryDTO createCategory(Category category) {
-        Category categorySaved = categoryRepository.save(category);
+    public CategoryDTO createCategory(CategoryCreateDTO categoryCreateDTO) {
+        Category categorySaved = categoryMapper.convertToEntity(categoryCreateDTO);
         return categoryMapper.convertToDTO(categorySaved);
     }
 
-    public CategoryDTO updateCategory(Long id, Category categoryDetails) {
-        Category category = categoryRepository.findById(id).orElse(null);
-        if (category == null) {
-            return null;
+    public CategoryDTO updateCategory(Long id, CategoryUpdateDTO categoryUpdateDTO) {
+        Category category = categoryRepository.findById(id).orElseThrow(()
+        -> new RuntimeException("Categorie non trouvée, l'Id " + id + " n'existe pas."));
+        if (categoryUpdateDTO.getName() != null) {
+            category.setName(categoryUpdateDTO.getName());
         }
-        category.setName(categoryDetails.getName());
         Category categoryUpdated = categoryRepository.save(category);
         return categoryMapper.convertToDTO(categoryUpdated);
     }

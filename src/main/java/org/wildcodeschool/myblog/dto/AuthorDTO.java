@@ -7,6 +7,7 @@ public class AuthorDTO {
     private String lastname;
 
 
+    //Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

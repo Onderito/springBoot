@@ -36,4 +36,4 @@ public class AuthorContributionDTO {
                                 String contribution) {
         this.contribution = contribution;
     }
-    }
+}

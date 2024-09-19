@@ -2,7 +2,9 @@ package org.wildcodeschool.myblog.service;
 
 
 import org.springframework.stereotype.Service;
+import org.wildcodeschool.myblog.dto.AuthorCreateDTO;
 import org.wildcodeschool.myblog.dto.AuthorDTO;
+import org.wildcodeschool.myblog.dto.AuthorUpdateDTO;
 import org.wildcodeschool.myblog.mapper.AuthorMapper;
 import org.wildcodeschool.myblog.model.Author;
 import org.wildcodeschool.myblog.repository.AuthorRepository;
@@ -34,18 +36,18 @@ public class AuthorService {
         return authorMapper.convertToDTO(author);
     }
 
-    public AuthorDTO createAuthor(Author author) {
-        Author savedAuthor = authorRepository.save(author);
+    public AuthorDTO createAuthor(AuthorCreateDTO authorCreateDTO) {
+        Author savedAuthor = authorMapper.convertToEntity(authorCreateDTO);
         return authorMapper.convertToDTO(savedAuthor);
     }
 
-    public AuthorDTO updateAuthor(Long id, Author authorDetails) {
-        Author author = authorRepository.findById(id).orElse(null);
-        if (author == null) {
-            return null;
-        }
-        author.setFirstname(authorDetails.getFirstname());
-        author.setLastname(authorDetails.getLastname());
+    public AuthorDTO updateAuthor(Long id, AuthorUpdateDTO authorUpdateDTO) {
+        Author author = authorRepository.findById(id).orElseThrow((
+                () -> new RuntimeException("Auteur introuvable")
+                ));
+
+        author.setFirstname(authorUpdateDTO.getFirstname());
+        author.setLastname(authorUpdateDTO.getLastname());
         Author savedAuthor = authorRepository.save(author);
         return authorMapper.convertToDTO(savedAuthor);
     }
