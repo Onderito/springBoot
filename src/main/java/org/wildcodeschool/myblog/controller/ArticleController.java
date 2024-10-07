@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import org.wildcodeschool.myblog.dto.ArticleCreateDTO;
 import org.wildcodeschool.myblog.dto.ArticleDTO;
 import org.wildcodeschool.myblog.dto.ArticleUpdateDTO;
-import org.wildcodeschool.myblog.model.*;
 import org.wildcodeschool.myblog.service.ArticleService;
 
 import java.util.List;
