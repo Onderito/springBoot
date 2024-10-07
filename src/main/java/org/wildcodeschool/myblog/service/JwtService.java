@@ -1,4 +1,4 @@
-package org.wildcodeschool.myblog.security;
+package org.wildcodeschool.myblog.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
